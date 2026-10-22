@@ -29,8 +29,10 @@ h2 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;back
 /* nav */
 .nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px clamp(20px,5vw,56px);backdrop-filter:blur(14px);background:rgba(5,5,5,.6);border-bottom:1px solid transparent;transition:border-color .3s}
 .nav.scrolled{border-color:var(--line)}
-.brand{font-family:var(--font-d);font-weight:800;font-size:1.45rem;letter-spacing:.04em}
-.brand span{background:linear-gradient(180deg,#ff6a4d,#ff2038);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand{font-family:var(--font-d);font-weight:800;font-size:1.45rem;letter-spacing:.04em;display:inline-flex;align-items:center;gap:11px}
+.logo-mark{width:38px;height:38px;display:block;flex:0 0 auto;filter:drop-shadow(0 6px 16px rgba(116,183,255,.28))}
+.brand.big{gap:14px}.brand.big .logo-mark{width:56px;height:56px}
+.brand .brand-dot{background:linear-gradient(180deg,#ff6a4d,#ff2038);-webkit-background-clip:text;background-clip:text;color:transparent}
 .brand.big{font-size:2.4rem}
 .nav-links{display:flex;gap:30px}
 .nav-links a{font-size:.92rem;color:var(--muted);position:relative;padding:4px 0}
@@ -61,20 +63,18 @@ h2 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;back
 .hero-eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:.72rem;letter-spacing:.3em;font-weight:700;color:var(--muted);border:1px solid var(--line);padding:9px 16px;border-radius:99px;background:rgba(255,255,255,.03)}
 .live-dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 0 rgba(255,38,56,.55);animation:pulse 2s infinite}
 @keyframes pulse{70%{box-shadow:0 0 0 9px rgba(255,38,56,0)}100%{box-shadow:0 0 0 0 rgba(255,38,56,0)}}
-.hero-title{font-size:clamp(2.7rem,9.5vw,7.6rem);font-weight:800;text-transform:uppercase;margin:26px 0 22px;overflow-wrap:normal;word-break:keep-all;hyphens:none}
+.hero-title{font-size:clamp(2.55rem,8.6vw,6.7rem);font-weight:800;text-transform:uppercase;margin:26px 0 22px;overflow-wrap:normal;word-break:keep-all;hyphens:none}
 body:not(.hero-ready) .hero-title .line{display:block;overflow:hidden;padding-bottom:.08em;margin-bottom:-.08em}
 body.hero-ready .hero-title .line{display:block;overflow:visible;padding-bottom:0;margin-bottom:0}
 .hero-title .wi{display:inline-block;transform:translateY(110%);white-space:nowrap;will-change:transform}
 body.hero-ready .hero-title .wi{transform:none;will-change:auto}
 body.hero-ready .hero .reveal{opacity:1;transform:none}
-.hero-title .em-unit{position:relative;color:#eaf7ff;-webkit-text-fill-color:currentColor;text-transform:none;font-style:italic;text-shadow:0 0 30px rgba(116,183,255,.38)}
+.hero-title .wi:not(.em-unit){background:linear-gradient(180deg,#ffffff 15%,#dbe4f2 52%,#93a3bb 105%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.hero-title .wi{filter:drop-shadow(0 3px 14px rgba(0,0,0,.5))}
+.hero-title .em-unit{position:relative;background:linear-gradient(92deg,#ff2038,#ff5b47 48%,#ff9a62 88%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;text-transform:none;font-style:italic;filter:drop-shadow(0 4px 18px rgba(255,38,56,.3))}
 .hero-title .em-unit::after{content:"";position:absolute;left:.02em;right:.08em;bottom:-.03em;height:.055em;border-radius:99px;background:linear-gradient(90deg,#ffffff,#74b7ff 52%,#ff2638);box-shadow:0 0 18px rgba(116,183,255,.35)}
-.hero-sub{color:var(--muted);font-size:clamp(1rem,1.6vw,1.2rem);line-height:1.7;max-width:600px}
-.hero-ctas{display:flex;gap:14px;flex-wrap:wrap;margin:32px 0 44px}
-.hero-meta{display:flex;gap:clamp(24px,5vw,56px);flex-wrap:wrap;border-top:1px solid var(--line);padding-top:24px;max-width:620px}
-.hero-meta div{display:flex;flex-direction:column;gap:2px}
-.hero-meta strong{font-family:var(--font-d);font-size:1.7rem}
-.hero-meta span{color:var(--muted);font-size:.82rem}
+.hero-sub{color:var(--muted);font-size:clamp(.92rem,1.35vw,1.05rem);line-height:1.65;max-width:540px}
+.hero-ctas{display:flex;gap:14px;flex-wrap:wrap;margin:32px 0 0}
 .scroll-hint{position:absolute;right:clamp(20px,5vw,56px);bottom:26px;z-index:2;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:.62rem;letter-spacing:.34em;color:var(--muted)}
 .scroll-hint span{width:1px;height:52px;background:linear-gradient(var(--blue),rgba(255,38,56,.85),transparent);animation:drop 1.8s ease-in-out infinite}
 @keyframes drop{0%{transform:scaleY(0);transform-origin:top}55%{transform:scaleY(1);transform-origin:top}56%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
@@ -192,8 +192,6 @@ body.hero-ready .hero .reveal{opacity:1;transform:none}
 .ind-card p{color:var(--muted);line-height:1.65;font-size:.95rem}
 .ind-card .ind-proof{margin-top:14px;color:var(--accent2);font-weight:700;font-size:.85rem}
 
-/* hero meta — value props (no numbers) */
-.hero-meta .meta-big{font-size:1.28rem;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 /* stronger hero canvas presence */
 .hero{background:radial-gradient(70% 60% at 74% 40%,rgba(116,183,255,.16),transparent 65%),radial-gradient(50% 45% at 85% 60%,rgba(216,239,255,.1),transparent 60%),var(--bg)}
 /* 3D scroll entrances */
@@ -212,15 +210,13 @@ body.hero-ready .hero .reveal{opacity:1;transform:none}
   .noise{opacity:.025}
   .hero{min-height:100svh;padding:108px 18px 76px}
   .hero-eyebrow{font-size:.62rem;letter-spacing:.22em;line-height:1.55;max-width:100%}
-  .hero-title{font-size:clamp(2.55rem,12.2vw,3.35rem);line-height:1.04;margin:22px 0 18px}
+  .hero-title{font-size:clamp(2.35rem,11.4vw,3.05rem);line-height:1.04;margin:22px 0 18px}
   .hero-sub{font-size:.98rem;line-height:1.62}
   .hero-ctas{margin:26px 0 34px}
-  .hero-meta{gap:18px;max-width:100%}
-  .hero-meta div{min-width:132px;flex:1}
   #webgl{opacity:.94}
 }
 @media(max-width:380px){
-  .hero-title{font-size:2.42rem}
+  .hero-title{font-size:2.28rem}
   .hero-eyebrow{font-size:.58rem;letter-spacing:.18em}
   .hero-ctas .btn{width:100%;justify-content:center}
 }
