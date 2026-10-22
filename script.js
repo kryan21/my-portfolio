@@ -7,7 +7,18 @@ function mq(q){try{return (typeof window.matchMedia==='function')?window.matchMe
 var reduced=mq('(prefers-reduced-motion: reduce)');
 
 /* ── Hero starts immediately (no welcome screen) ── */
-function bootHero(){ startHero(); }
+var heroBooted=false;
+function bootHero(){
+  if(heroBooted) return; heroBooted=true;
+  if(document.fonts && document.fonts.ready){
+    var started=false;
+    var go=function(){ if(!started){ started=true; startHero(); } };
+    document.fonts.ready.then(go);
+    setTimeout(go,700);
+  }else{
+    startHero();
+  }
+}
 
 /* ── Hero intro (GSAP word rise — em kept as ONE unit, never split) ── */
 var heroStarted=false;
@@ -176,7 +187,7 @@ if(form){
     if(name.length<2){ err.textContent='Please add your name.'; return; }
     if(!type){ err.textContent='Please select your business type.'; return; }
     if(msg.length<10){ err.textContent='Tell me a little more about what you need (10+ characters).'; return; }
-    ok.textContent='Thanks, '+name.split(' ')[0]+' ✓ Your enquiry is noted. For the fastest reply, also reach me on GitHub @kryan21 — I usually respond with demo ideas first.';
+    ok.textContent='Thanks, '+name.split(' ')[0]+' ✓ Your enquiry is noted. For the fastest reply, message me on WhatsApp — 73219 29869 — I usually respond with demo ideas first.';
     form.reset();
   });
 }
