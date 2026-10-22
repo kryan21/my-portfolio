@@ -5,7 +5,7 @@
   --blue:#74b7ff; --ice:#d8efff; --red:#ff2638;
   --grad:linear-gradient(100deg,#ffffff,#d8efff 36%,#74b7ff 68%,#ffffff 112%);
   --red-grad:linear-gradient(90deg,#ff2038,#ff5b47 58%,rgba(255,32,56,.08));
-  --r:20px; --font-d:'Syne',sans-serif; --font-b:'Space Grotesk','Inter',sans-serif;
+  --r:20px; --font-d:'Syne',sans-serif; --font-b:'Space Grotesk',system-ui,sans-serif;
   /* one spacing system for nav, hero, sections, footer */
   --maxw:1440px; --gutter:clamp(18px,5vw,72px); --pad-x:max(var(--gutter),calc((100% - var(--maxw))/2 + var(--gutter)));
   --sec-y:clamp(44px,6.5vw,88px); --head-gap:clamp(28px,4vw,44px); --gap:clamp(16px,2vw,24px); --card-pad:clamp(20px,2.4vw,28px);
