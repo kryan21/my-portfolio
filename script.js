@@ -1,4 +1,4 @@
-/* ═══ KRYAN PORTFOLIO — script.js ═══ */
+/* ═══ KRYAN PORTFOLIO — script.js (v10: smooth + stable) ═══ */
 (function(){
 'use strict';
 var $=function(s,c){return (c||document).querySelector(s)};
@@ -7,6 +7,17 @@ function mq(q){try{return (typeof window.matchMedia==='function')?window.matchMe
 var reduced=mq('(prefers-reduced-motion: reduce)');
 var coarse=mq('(pointer:coarse)');
 var WA_NUMBER='917321929869';
+
+/* Shared scroll state — read once per scroll event, never from inside animation frames
+   (reading scroll/layout after style writes forces layout and causes stutter). */
+var curY=window.pageYOffset||0, maxScroll=0, scrollTarget=0;
+function calcMax(){
+  var h=document.documentElement;
+  maxScroll=Math.max(0,h.scrollHeight-h.clientHeight);
+}
+
+/* Decode screenshots off the main thread so scrolling past them doesn't hitch */
+$$('.wc-shot').forEach(function(img){ img.decoding='async'; });
 
 /* ── Hero starts immediately (no welcome screen) ── */
 var heroBooted=false;
@@ -23,13 +34,22 @@ function bootHero(){
 }
 
 /* ── Hero intro (GSAP word rise — em kept as ONE unit, never split) ── */
-var heroStarted=false;
-function markHeroReady(){ document.body.classList.add('hero-ready'); }
+var heroStarted=false, heroReady=false;
+function markHeroReady(){
+  if(heroReady) return; heroReady=true;
+  document.body.classList.add('hero-ready');
+  scheduleGalaxy(); /* build the WebGL galaxy only AFTER the intro, so the two never compete */
+}
 function startHero(){
   if(heroStarted) return; heroStarted=true;
   if(window.gsap && !reduced){
-    gsap.to('.hero-title .wi',{y:0,duration:.85,stagger:.07,ease:'power4.out',clearProps:'transform,opacity,visibility',onComplete:markHeroReady});
-    gsap.fromTo('.hero .reveal',{opacity:0,y:22},{opacity:1,y:0,duration:.7,stagger:.08,delay:.2,ease:'power3.out',clearProps:'all'});
+    /* y:0 clears the px offset parsed from the CSS transform, so yPercent is the only offset */
+    gsap.set('.hero-title .wi',{y:0,yPercent:110});
+    /* No clearProps here: removing inline transforms would snap elements back to their CSS start state. */
+    gsap.timeline({onComplete:markHeroReady})
+      .to('.hero-title .wi',{yPercent:0,duration:.85,stagger:.07,ease:'power4.out'},0)
+      .fromTo('.hero .reveal',{opacity:0,y:22},{opacity:1,y:0,duration:.7,stagger:.08,ease:'power3.out'},.2);
+    setTimeout(markHeroReady,2600); /* failsafe */
   }else{
     $$('.hero-title .wi').forEach(function(el){el.style.transform='none'});
     $$('.hero .reveal').forEach(function(el){el.style.opacity='1';el.style.transform='none'});
@@ -55,7 +75,7 @@ function startCounters(){
 var lenis=null;
 if(window.Lenis && !reduced){
   try{
-    lenis=new Lenis({duration:1.05,easing:function(t){return Math.min(1,1.001-Math.pow(2,-10*t))},smoothWheel:true});
+    lenis=new Lenis({duration:1.05,easing:function(t){return Math.min(1,1.001-Math.pow(2,-10*t))},smoothWheel:true,syncTouch:false});
     if(window.gsap && window.ScrollTrigger){
       lenis.on('scroll',ScrollTrigger.update);
       gsap.ticker.add(function(time){ lenis.raf(time*1000); });
@@ -79,24 +99,32 @@ document.addEventListener('click',function(e){
   if(scrollToTarget(href)) e.preventDefault();
 });
 
-/* ── Scroll progress + nav state (rAF-throttled) ── */
+/* ── Scroll progress + nav state (one rAF-throttled handler, no layout reads) ── */
 var prog=$('#scrollProgress'), nav=$('#topNav');
-var scrollTarget=0, ticking=false;
+var ticking=false;
 function onScroll(){
+  curY=window.pageYOffset||0;
   if(ticking) return; ticking=true;
   requestAnimationFrame(function(){
     ticking=false;
-    var h=document.documentElement;
-    var y=h.scrollTop||window.scrollY||0;
     var heroH=window.innerHeight||800;
-    scrollTarget=Math.max(0,Math.min(1,y/heroH));
-    var max=h.scrollHeight-h.clientHeight;
-    if(prog) prog.style.transform='scaleX('+(max>0?y/max:0)+')';
-    if(nav) nav.classList.toggle('scrolled',y>30);
+    scrollTarget=Math.max(0,Math.min(1,curY/heroH));
+    if(prog) prog.style.transform='scaleX('+(maxScroll>0?Math.min(1,curY/maxScroll):0)+')';
+    if(nav) nav.classList.toggle('scrolled',curY>30);
   });
 }
 window.addEventListener('scroll',onScroll,{passive:true});
-onScroll();
+calcMax(); onScroll();
+window.addEventListener('load',function(){
+  calcMax(); onScroll();
+  if(window.ScrollTrigger) ScrollTrigger.refresh();
+});
+(function(){
+  var t=0;
+  function later(){ clearTimeout(t); t=setTimeout(function(){ calcMax(); onScroll(); },150); }
+  window.addEventListener('resize',later);
+  if('ResizeObserver' in window){ try{ new ResizeObserver(later).observe(document.body); }catch(e){} }
+})();
 
 /* ── Mobile menu ── */
 var burger=$('#burger'), mm=$('#mobileMenu');
@@ -112,20 +140,23 @@ if(burger&&mm){
   $$('a',mm).forEach(function(a){a.addEventListener('click',function(){ setMenu(false); })});
 }
 
-/* ── Scroll reveals ── */
+/* ── Scroll reveals (ONE batched trigger set: fewer observers, grouped staggering, opacity + y only) ── */
 if(window.gsap && window.ScrollTrigger && !reduced){
   gsap.registerPlugin(ScrollTrigger);
   ScrollTrigger.config({ignoreMobileResize:true});
 
-  $$('.reveal').forEach(function(el){
-    if(el.closest('.hero')) return;
-    if(el.classList.contains('work-card')||el.classList.contains('ind-card')||el.classList.contains('svc-card')) return;
-    gsap.fromTo(el,{opacity:0,y:26},{opacity:1,y:0,duration:.6,ease:'power2.out',clearProps:'transform',
-      scrollTrigger:{trigger:el,start:'top 92%',once:true}});
+  var items=$$('.reveal').filter(function(el){ return !el.closest('.hero'); });
+  ScrollTrigger.batch(items,{
+    start:'top 94%', once:true, interval:.08, batchMax:8,
+    onEnter:function(batch){
+      batch.forEach(function(el){ el.classList.add('gs-anim'); });
+      /* clearProps only clears transform — the CSS .reveal rule sets opacity only, so nothing snaps back */
+      gsap.fromTo(batch,{opacity:0,y:30},{opacity:1,y:0,duration:.6,stagger:.07,ease:'power2.out',overwrite:true,clearProps:'transform',
+        onComplete:function(){ batch.forEach(function(el){ el.classList.remove('gs-anim'); }); }});
+    }
   });
 
-  /* Hero: content simply lifts and fades as you leave the galaxy (no pin, so no scroll jump).
-     The galaxy zoom is handled by the WebGL camera, never by scaling text or the canvas. */
+  /* Hero: content simply lifts and fades as you leave the galaxy (no pin, so no scroll jump). */
   var heroSec=$('#heroSection');
   if(heroSec){
     gsap.to('.hero-content',{y:-40,opacity:.15,ease:'none',force3D:true,
@@ -135,17 +166,6 @@ if(window.gsap && window.ScrollTrigger && !reduced){
     gsap.to('.scroll-hint',{opacity:0,ease:'none',
       scrollTrigger:{trigger:heroSec,start:'top top',end:'20% top',scrub:true}});
   }
-
-  /* Cards: quick, light entrance. CSS transitions are disabled while GSAP runs so the two never fight. */
-  var from=coarse?{opacity:0,y:28}:{opacity:0,y:44,rotateX:12,transformPerspective:1000,transformOrigin:'50% 100%'};
-  var to=coarse?{opacity:1,y:0}:{opacity:1,y:0,rotateX:0};
-  $$('.work-card,.ind-card,.svc-card').forEach(function(card){
-    var f=Object.assign({},from), t=Object.assign({duration:.5,ease:'power2.out',clearProps:'transform',
-      onStart:function(){card.classList.add('gs-anim')},
-      onComplete:function(){card.classList.remove('gs-anim')},
-      scrollTrigger:{trigger:card,start:'top 96%',once:true}},to);
-    gsap.fromTo(card,f,t);
-  });
 }else{
   var io=('IntersectionObserver' in window)?new IntersectionObserver(function(es){
     es.forEach(function(e){ if(e.isIntersecting){ e.target.style.opacity='1'; e.target.style.transform='none'; io.unobserve(e.target);} });
@@ -156,11 +176,11 @@ if(window.gsap && window.ScrollTrigger && !reduced){
   });
 }
 
-/* ── Marquee (time-based, pauses off-screen, leans with scroll speed) ── */
+/* ── Marquee (time-based, pauses off-screen, leans with scroll speed — no DOM reads per frame) ── */
 (function marquee(){
   var track=$('#marqueeTrack'), skewEl=$('#marqueeSkew'), wrap=$('.marquee'); if(!track) return;
   var set=track.querySelector('.marquee-set'); if(!set) return;
-  var visible=true, x=0, w=0, last=0, lastY=window.scrollY||0, vel=0;
+  var visible=true, x=0, w=0, last=0, lastY=curY, vel=0, lastSkew=0;
   function build(){
     w=set.getBoundingClientRect().width;
     if(!w||w<10){ setTimeout(build,300); return; }
@@ -176,20 +196,23 @@ if(window.gsap && window.ScrollTrigger && !reduced){
     requestAnimationFrame(step);
     if(!last) last=now;
     var dt=Math.min(50,now-last); last=now;
-    if(!visible||document.hidden) return;
+    if(!visible||document.hidden) { lastY=curY; return; }
     x-=dt*.066; if(-x>=w) x+=w;
-    track.style.transform='translate3d('+x+'px,0,0)';
+    track.style.transform='translate3d('+x.toFixed(2)+'px,0,0)';
     if(skewEl&&!coarse){
-      var y=window.scrollY||0, dy=y-lastY; lastY=y;
+      var dy=curY-lastY; lastY=curY;
       vel+=(dy-vel)*.12;
       var s=Math.max(-8,Math.min(8,-vel*.22));
-      skewEl.style.transform='skewX('+s.toFixed(2)+'deg)';
+      if(Math.abs(s-lastSkew)>.03){
+        lastSkew=s;
+        skewEl.style.transform='skewX('+s.toFixed(2)+'deg)';
+      }
     }
   }
   if(document.readyState==='complete') build(); else window.addEventListener('load',build);
 })();
 
-/* ── 3D tilt cards (rAF, no CSS lag) ── */
+/* ── 3D tilt cards (rAF, smooth return on leave) ── */
 if(mq('(hover:hover) and (pointer:fine)') && !reduced){
   $$('[data-tilt]').forEach(function(card){
     var raf=0, ex=0, ey=0;
@@ -199,9 +222,13 @@ if(mq('(hover:hover) and (pointer:fine)') && !reduced){
       var px=(ex-r.left)/r.width-.5, py=(ey-r.top)/r.height-.5;
       card.style.transform='perspective(1000px) rotateY('+(px*6)+'deg) rotateX('+(-py*6)+'deg) translateY(-3px)';
     }
-    card.addEventListener('mouseenter',function(){ card.classList.add('tilting'); });
+    card.addEventListener('mouseenter',function(){ card.classList.add('tilting'); card.style.transition='border-color .25s'; });
     card.addEventListener('mousemove',function(e){ ex=e.clientX; ey=e.clientY; if(!raf) raf=requestAnimationFrame(apply); });
-    card.addEventListener('mouseleave',function(){ card.classList.remove('tilting'); card.style.transform=''; });
+    card.addEventListener('mouseleave',function(){
+      card.classList.remove('tilting');
+      card.style.transition='transform .4s cubic-bezier(.2,.8,.2,1),border-color .25s';
+      card.style.transform='';
+    });
   });
 }
 
@@ -217,6 +244,15 @@ if(mq('(hover:hover)') && !reduced){
 }
 
 /* ── Work filters (instant swap + quick pop-in) ── */
+var refreshQueued=false;
+function queueRefresh(){
+  if(refreshQueued) return; refreshQueued=true;
+  requestAnimationFrame(function(){
+    refreshQueued=false;
+    calcMax();
+    if(window.ScrollTrigger) ScrollTrigger.refresh();
+  });
+}
 $$('.filter').forEach(function(btn){
   btn.addEventListener('click',function(){
     $$('.filter').forEach(function(b){b.classList.remove('active')});
@@ -233,7 +269,7 @@ $$('.filter').forEach(function(btn){
         card.classList.remove('pop');
       }
     });
-    if(window.ScrollTrigger) ScrollTrigger.refresh();
+    queueRefresh();
   });
 });
 $$('.work-card').forEach(function(card){
@@ -261,17 +297,23 @@ if(form){
   });
 }
 
-bootHero();
+/* ═══ WEBGL — blue-white spiral galaxy (lighter particle budget, built after the intro, faded in) ═══ */
+var galaxyBooted=false;
+function scheduleGalaxy(){
+  if(galaxyBooted) return; galaxyBooted=true;
+  var idle=window.requestIdleCallback||function(f){ return setTimeout(f,120); };
+  idle(initGalaxy,{timeout:900});
+}
 
-/* ═══ WEBGL — blue-white spiral galaxy with round, mobile-safe particles ═══ */
-(function webgl(){
+function initGalaxy(){
   var canvas=$('#webgl');
-  if(!canvas||reduced){ if(canvas) canvas.style.display='none'; return; }
-  if(!window.THREE) return; /* the CSS blue glow remains as a no-WebGL fallback */
+  if(!canvas) return;
+  if(reduced){ canvas.style.display='none'; return; }
+  if(!window.THREE){ canvas.classList.add('webgl-fallback'); return; } /* CSS blue glow remains */
   try{
     var isSmall=(window.innerWidth||1200)<760 || coarse;
-    var renderer=new THREE.WebGLRenderer({canvas:canvas,alpha:true,antialias:!isSmall,powerPreference:isSmall?'default':'high-performance'});
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,isSmall?1.5:1.8));
+    var renderer=new THREE.WebGLRenderer({canvas:canvas,alpha:true,antialias:false,powerPreference:isSmall?'default':'high-performance'});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,isSmall?1.25:1.5));
     renderer.setClearColor(0x000000,0);
     var scene=new THREE.Scene();
     var camera=new THREE.PerspectiveCamera(45,1,.1,100);
@@ -302,7 +344,7 @@ bootHero();
     ]);
 
     /* ── Spiral galaxy: white core, icy inner arms, blue outer arms ── */
-    var COUNT=isSmall?12000:50000, RADIUS=5.4, BRANCHES=3, SPIN=1.15, RAND=.3, POWER=2.9;
+    var COUNT=isSmall?9000:26000, RADIUS=5.4, BRANCHES=3, SPIN=1.15, RAND=.3, POWER=2.9;
     var positions=new Float32Array(COUNT*3), colors=new Float32Array(COUNT*3);
     var cCore=new THREE.Color(0xffffff), cIn=new THREE.Color(0xd8efff),
         cMid=new THREE.Color(0x74b7ff), cOut=new THREE.Color(0x2b4c9b), tmp=new THREE.Color();
@@ -328,7 +370,7 @@ bootHero();
     gGeo.setAttribute('position',new THREE.BufferAttribute(positions,3));
     gGeo.setAttribute('color',new THREE.BufferAttribute(colors,3));
     var galaxyMaterial=new THREE.PointsMaterial({
-      size:isSmall?.056:.038,
+      size:isSmall?.07:.05, /* slightly larger points compensate for the lower count */
       map:particleTexture,
       sizeAttenuation:true,
       depthWrite:false,
@@ -342,7 +384,7 @@ bootHero();
     group.add(galaxy);
 
     /* ── Blue-white glowing core ── */
-    var coreTexture=discTexture(256,[
+    var coreTexture=discTexture(128,[
       [0,'rgba(255,255,255,1)'],
       [.3,'rgba(191,224,255,.62)'],
       [.65,'rgba(80,140,255,.24)'],
@@ -353,7 +395,7 @@ bootHero();
     group.add(core);
 
     /* ── Distant circular stars for depth ── */
-    var sCount=isSmall?300:800, sPos=new Float32Array(sCount*3);
+    var sCount=isSmall?200:500, sPos=new Float32Array(sCount*3);
     for(var j=0;j<sCount;j++){
       var th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1), rr=13+Math.random()*22;
       sPos[j*3]=rr*Math.sin(ph)*Math.cos(th); sPos[j*3+1]=rr*Math.cos(ph)*.6; sPos[j*3+2]=rr*Math.sin(ph)*Math.sin(th);
@@ -394,7 +436,7 @@ bootHero();
       new IntersectionObserver(function(entries){ heroVisible=entries[0].isIntersecting; },{threshold:0}).observe(canvas);
     }
 
-    var clock=new THREE.Clock(), sp=0;
+    var clock=new THREE.Clock(), sp=0, shown=false;
     (function animate(){
       requestAnimationFrame(animate);
       if(document.hidden||!heroVisible) return;
@@ -410,7 +452,10 @@ bootHero();
       camera.position.z=6.4 - sp*2.1;
       camera.lookAt(0,0,0);
       renderer.render(scene,camera);
+      if(!shown){ shown=true; canvas.classList.add('on'); } /* fade in only after the first frame is ready */
     })();
   }catch(err){ canvas.classList.add('webgl-fallback'); }
-})();
+}
+
+bootHero();
 })();
