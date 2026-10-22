@@ -11,14 +11,16 @@ function bootHero(){ startHero(); }
 
 /* ── Hero intro (GSAP word rise — em kept as ONE unit, never split) ── */
 var heroStarted=false;
+function markHeroReady(){ document.body.classList.add('hero-ready'); }
 function startHero(){
   if(heroStarted) return; heroStarted=true;
   if(window.gsap && !reduced){
-    gsap.to('.hero-title .wi',{y:0,duration:1.05,stagger:.09,ease:'power4.out',clearProps:'transform,opacity,visibility'});
+    gsap.to('.hero-title .wi',{y:0,duration:1.05,stagger:.09,ease:'power4.out',clearProps:'transform,opacity,visibility',onComplete:markHeroReady});
     gsap.fromTo('.hero .reveal',{opacity:0,y:26},{opacity:1,y:0,duration:.9,stagger:.1,delay:.25,ease:'power3.out',clearProps:'all'});
   }else{
     $$('.hero-title .wi').forEach(function(el){el.style.transform='none'});
     $$('.hero .reveal').forEach(function(el){el.style.opacity='1';el.style.transform='none'});
+    markHeroReady();
   }
   startCounters();
 }
@@ -68,12 +70,16 @@ if(window.gsap && window.ScrollTrigger && !reduced){
   /* ═══ PREMIUM SCROLL 3D ═══ */
   /* (a) Pinned hero: as you scroll, content lifts away and the galaxy zooms in. */
   var heroSec=$('#heroSection');
-  if(heroSec){
-    var pinTl=gsap.timeline({scrollTrigger:{trigger:heroSec,start:'top top',end:'+=85%',scrub:1,pin:true,anticipatePin:1}});
-    pinTl.to('.hero-content',{y:-64,opacity:.3,scale:.97,ease:'none'},0)
-         .to('#webgl',{scale:1.22,ease:'none'},0)
-         .to('.hero-glow',{opacity:.35,ease:'none'},0);
-    pinTl.to('.scroll-hint',{opacity:0,ease:'none'},0);
+  var canPinHero=(window.innerWidth||0)>=760 && !mq('(pointer:coarse)');
+  if(heroSec && canPinHero){
+    /* Keep the words on their natural grid: fade/lift only. The galaxy zoom is
+       handled by the WebGL camera, never by scaling text or the canvas. */
+    var pinTl=gsap.timeline({scrollTrigger:{trigger:heroSec,start:'top top',end:'+=72%',scrub:1,pin:true,anticipatePin:1}});
+    pinTl.to('.hero-content',{y:-30,opacity:.22,ease:'none'},0)
+         .to('.hero-glow',{opacity:.3,ease:'none'},0)
+         .to('.scroll-hint',{opacity:0,ease:'none'},0);
+  }else if(heroSec){
+    gsap.to('.hero-content',{opacity:.3,ease:'none',scrollTrigger:{trigger:heroSec,start:'top top',end:'bottom top',scrub:1}});
   }
   /* (b) 3D entrances: cards unfold out of the screen in perspective as they arrive. */
   $$('.work-card,.ind-card,.svc-card').forEach(function(card,i){
@@ -177,13 +183,17 @@ if(form){
 
 bootHero();
 
-/* ═══ WEBGL — revolving spiral GALAXY background (Three.js) ═══ */
+/* ═══ WEBGL — blue-white spiral galaxy with round, mobile-safe particles ═══ */
 (function webgl(){
   var canvas=$('#webgl');
-  if(!canvas||!window.THREE||reduced) { if(canvas) canvas.style.display='none'; return; }
+  if(!canvas||reduced){ if(canvas) canvas.style.display='none'; return; }
+  if(!window.THREE) return; /* the CSS blue glow remains as a no-WebGL fallback */
   try{
-    var renderer=new THREE.WebGLRenderer({canvas:canvas,alpha:true,antialias:true});
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    var coarsePointer=mq('(pointer:coarse)');
+    var isSmall=(window.innerWidth||1200)<760 || coarsePointer;
+    var renderer=new THREE.WebGLRenderer({canvas:canvas,alpha:true,antialias:true,powerPreference:isSmall?'default':'high-performance'});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,isSmall?1.5:1.8));
+    renderer.setClearColor(0x000000,0);
     var scene=new THREE.Scene();
     var camera=new THREE.PerspectiveCamera(45,1,.1,100);
     camera.position.set(0,1.7,6.4);
@@ -192,11 +202,32 @@ bootHero();
     group.rotation.set(.62,0,.14); /* angled disc — the premium view */
     scene.add(group);
 
-    /* ── spiral galaxy points ── */
-    var isSmall=(window.innerWidth||1200)<720;
-    var COUNT=isSmall?30000:70000, RADIUS=5.4, BRANCHES=3, SPIN=1.15, RAND=.3, POWER=2.9;
+    /* A radial sprite turns every point into a soft circular particle. Linear
+       filtering (and no mipmaps) prevents the blocky squares seen on mobile. */
+    function discTexture(size,stops){
+      var c=document.createElement('canvas'); c.width=c.height=size;
+      var g=c.getContext('2d');
+      var grad=g.createRadialGradient(size/2,size/2,0,size/2,size/2,size/2);
+      stops.forEach(function(stop){ grad.addColorStop(stop[0],stop[1]); });
+      g.fillStyle=grad; g.fillRect(0,0,size,size);
+      var tex=new THREE.CanvasTexture(c);
+      tex.minFilter=THREE.LinearFilter;
+      tex.magFilter=THREE.LinearFilter;
+      tex.generateMipmaps=false;
+      return tex;
+    }
+    var particleTexture=discTexture(64,[
+      [0,'rgba(255,255,255,1)'],
+      [.28,'rgba(255,255,255,.96)'],
+      [.58,'rgba(191,224,255,.5)'],
+      [1,'rgba(116,183,255,0)']
+    ]);
+
+    /* ── Spiral galaxy: white core, icy inner arms, blue outer arms ── */
+    var COUNT=isSmall?16000:56000, RADIUS=5.4, BRANCHES=3, SPIN=1.15, RAND=.3, POWER=2.9;
     var positions=new Float32Array(COUNT*3), colors=new Float32Array(COUNT*3);
-    var cIn=new THREE.Color(0xffffff), cMid=new THREE.Color(0xbdbdbd), cOut=new THREE.Color(0x4a4a52), tmp=new THREE.Color();
+    var cCore=new THREE.Color(0xffffff), cIn=new THREE.Color(0xd8efff),
+        cMid=new THREE.Color(0x74b7ff), cOut=new THREE.Color(0x2b4c9b), tmp=new THREE.Color();
     for(var i=0;i<COUNT;i++){
       var r=Math.pow(Math.random(),1.7)*RADIUS;
       var branch=((i%BRANCHES)/BRANCHES)*Math.PI*2;
@@ -207,62 +238,87 @@ bootHero();
       var y=jitter(POWER,RAND*.55);
       positions[i*3]=x; positions[i*3+1]=y; positions[i*3+2]=z;
       var tMix=r/RADIUS;
-      if(tMix<.45) tmp.copy(cIn).lerp(cMid,tMix/.45); else tmp.copy(cMid).lerp(cOut,(tMix-.45)/.55);
-      /* sprinkle of bright white-blue stars */
-      if(Math.random()>.93) tmp.set(0xffffff);
+      if(tMix<.28) tmp.copy(cCore).lerp(cIn,tMix/.28);
+      else if(tMix<.68) tmp.copy(cIn).lerp(cMid,(tMix-.28)/.4);
+      else tmp.copy(cMid).lerp(cOut,(tMix-.68)/.32);
+      var roll=Math.random();
+      if(roll>.993) tmp.set(0xff6b7a);       /* rare rose nebula, as in real galaxies */
+      else if(roll>.968) tmp.set(0xffffff);  /* sparse brilliant stars */
       colors[i*3]=tmp.r; colors[i*3+1]=tmp.g; colors[i*3+2]=tmp.b;
     }
     var gGeo=new THREE.BufferGeometry();
     gGeo.setAttribute('position',new THREE.BufferAttribute(positions,3));
     gGeo.setAttribute('color',new THREE.BufferAttribute(colors,3));
-    var galaxy=new THREE.Points(gGeo,new THREE.PointsMaterial({size:.033,sizeAttenuation:true,depthWrite:false,blending:THREE.AdditiveBlending,vertexColors:true,transparent:true,opacity:.95}));
+    var galaxyMaterial=new THREE.PointsMaterial({
+      size:isSmall?.052:.038,
+      map:particleTexture,
+      sizeAttenuation:true,
+      depthWrite:false,
+      blending:THREE.AdditiveBlending,
+      vertexColors:true,
+      transparent:true,
+      opacity:.96,
+      alphaTest:.012
+    });
+    var galaxy=new THREE.Points(gGeo,galaxyMaterial);
     group.add(galaxy);
 
-    /* ── glowing core ── */
-    function glowTexture(){
-      var c=document.createElement('canvas'); c.width=c.height=256;
-      var g=c.getContext('2d');
-      var grad=g.createRadialGradient(128,128,0,128,128,128);
-      grad.addColorStop(0,'rgba(255,255,255,1)');
-      grad.addColorStop(.3,'rgba(205,205,205,.55)');
-      grad.addColorStop(.65,'rgba(120,120,130,.20)');
-      grad.addColorStop(1,'rgba(90,90,100,0)');
-      g.fillStyle=grad; g.fillRect(0,0,256,256);
-      return new THREE.CanvasTexture(c);
-    }
-    var core=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTexture(),depthWrite:false,blending:THREE.AdditiveBlending,transparent:true,opacity:.95}));
-    core.scale.set(4.6,4.6,1);
+    /* ── Blue-white glowing core ── */
+    var coreTexture=discTexture(256,[
+      [0,'rgba(255,255,255,1)'],
+      [.3,'rgba(191,224,255,.62)'],
+      [.65,'rgba(80,140,255,.24)'],
+      [1,'rgba(43,76,155,0)']
+    ]);
+    var core=new THREE.Sprite(new THREE.SpriteMaterial({map:coreTexture,depthWrite:false,blending:THREE.AdditiveBlending,transparent:true,opacity:.95}));
+    core.scale.set(4.8,4.8,1);
     group.add(core);
 
-    /* ── distant starfield for depth ── */
-    var sCount=900, sPos=new Float32Array(sCount*3);
+    /* ── Distant circular stars for depth ── */
+    var sCount=isSmall?420:850, sPos=new Float32Array(sCount*3);
     for(var j=0;j<sCount;j++){
       var th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1), rr=13+Math.random()*22;
       sPos[j*3]=rr*Math.sin(ph)*Math.cos(th); sPos[j*3+1]=rr*Math.cos(ph)*.6; sPos[j*3+2]=rr*Math.sin(ph)*Math.sin(th);
     }
     var sGeo=new THREE.BufferGeometry();
     sGeo.setAttribute('position',new THREE.BufferAttribute(sPos,3));
-    var stars=new THREE.Points(sGeo,new THREE.PointsMaterial({color:0xd9d9d9,size:.06,depthWrite:false,transparent:true,opacity:.7}));
+    var stars=new THREE.Points(sGeo,new THREE.PointsMaterial({
+      color:0xd8efff,
+      size:isSmall?.085:.07,
+      map:particleTexture,
+      depthWrite:false,
+      transparent:true,
+      opacity:.78,
+      alphaTest:.012
+    }));
     scene.add(stars);
 
     var mx=0,my=0,tx=0,ty=0;
-    document.addEventListener('mousemove',function(e){ tx=(e.clientX/window.innerWidth-.5); ty=(e.clientY/window.innerHeight-.5); });
+    if(!coarsePointer){
+      document.addEventListener('mousemove',function(e){ tx=(e.clientX/window.innerWidth-.5); ty=(e.clientY/window.innerHeight-.5); },{passive:true});
+    }
 
     function resize(){
       var w=canvas.clientWidth||window.innerWidth, h=canvas.clientHeight||window.innerHeight;
       renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix();
       group.position.x = w>1100 ? 1.15 : 0;
-      group.position.y = w>1100 ? .1 : .9;
+      group.position.y = w>1100 ? .1 : (isSmall?.55:.9);
     }
     window.addEventListener('resize',resize); resize();
+
+    var heroVisible=true;
+    if('IntersectionObserver' in window){
+      new IntersectionObserver(function(entries){ heroVisible=entries[0].isIntersecting; },{threshold:0}).observe(canvas);
+    }
 
     var clock=new THREE.Clock();
     (function animate(){
       requestAnimationFrame(animate);
+      if(document.hidden||!heroVisible) return;
       var t=clock.getElapsedTime();
       var sp=window.__scrollP||0;
       mx+=(tx-mx)*.04; my+=(ty-my)*.04;
-      /* the revolution: slow majestic spin, faster + tighter as you scroll away */
+      /* The revolution: slow majestic spin, faster + tighter as you scroll away. */
       group.rotation.y=t*.055 + sp*2.1;
       galaxy.rotation.y=-t*.018;
       stars.rotation.y=t*.006;
@@ -273,6 +329,6 @@ bootHero();
       camera.lookAt(0,0,0);
       renderer.render(scene,camera);
     })();
-  }catch(err){ canvas.style.display='none'; }
+  }catch(err){ canvas.classList.add('webgl-fallback'); }
 })();
 })();
