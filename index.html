@@ -14,9 +14,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
 </head>
 <body>
 <script>history.scrollRestoration='manual'; if(location.hash) history.replaceState(null,'',location.pathname); window.scrollTo(0,0);</script>
@@ -34,7 +35,7 @@
     <a href="#process">Process</a>
   </nav>
   <a class="btn btn-nav magnetic" href="#contact"><span>Start a Project</span><i>↗</i></a>
-  <button class="burger" id="burger" aria-label="Open menu"><span></span><span></span></button>
+  <button class="burger" id="burger" aria-label="Toggle menu" aria-expanded="false" aria-controls="mobileMenu"><span></span><span></span></button>
 </header>
 <div class="mobile-menu" id="mobileMenu">
   <a href="#work">Work</a><a href="#industries">Industries</a><a href="#services">Services</a><a href="#process">Process</a><a href="#contact" class="mm-cta">Start a Project ↗</a>
@@ -64,11 +65,11 @@
 </section>
 
 <!-- ═══ MARQUEE ═══ -->
-<div class="marquee" aria-hidden="true"><div class="marquee-track" id="marqueeTrack">
+<div class="marquee" aria-hidden="true"><div class="marquee-skew" id="marqueeSkew"><div class="marquee-track" id="marqueeTrack">
   <div class="marquee-set">
     <span>DENTAL HOSPITALS ✦</span><span>SKIN CLINICS ✦</span><span>COACHING INSTITUTES ✦</span><span>HOTEL MANAGEMENT ✦</span><span>PHOTOGRAPHERS ✦</span><span>WEDDING CREATORS ✦</span><span>RECRUITMENT FIRMS ✦</span><span>LOCAL BRANDS ✦</span>
   </div>
-</div></div>
+</div></div></div>
 
 <!-- ═══ WORK — real screenshots + real snippets from the live sites ═══ -->
 <section class="section work" id="work">
@@ -220,13 +221,12 @@
       </div>
       <label>What do you need?<textarea id="fMsg" rows="4" placeholder="I need a website for my clinic that shows our treatments and gets appointment enquiries…"></textarea></label>
       <p class="f-error" id="fError" aria-live="polite"></p>
-      <button class="btn btn-primary btn-big magnetic" type="submit"><span>Send Enquiry</span><i>↗</i></button>
+      <button class="btn btn-primary btn-big magnetic" type="submit"><span>Send on WhatsApp</span><i>↗</i></button>
       <p class="f-ok" id="fOk" aria-live="polite"></p>
     </form>
     <div class="contact-alt">
       <a href="https://wa.me/917321929869?text=Hi%20KRYAN%2C%20I%20want%20a%20website%20for%20my%20business." target="_blank" rel="noopener">WhatsApp — 73219 29869 ↗</a>
       <span>·</span><a href="mailto:aaryanraj2000@gmail.com">aaryanraj2000@gmail.com</a>
-      <span>·</span><a href="https://github.com/kryan21" target="_blank" rel="noopener">GitHub — @kryan21 ↗</a>
     </div>
   </div>
 </section>
@@ -242,6 +242,6 @@
 
 <a class="float-cta" href="https://wa.me/917321929869?text=Hi%20KRYAN%2C%20I%20want%20a%20website%20for%20my%20business." target="_blank" rel="noopener" aria-label="Chat on WhatsApp">✆</a>
 
-<script src="script.js"></script>
+<script defer src="script.js"></script>
 </body>
 </html>
