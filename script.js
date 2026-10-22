@@ -196,7 +196,7 @@ bootHero();
     var isSmall=(window.innerWidth||1200)<720;
     var COUNT=isSmall?30000:70000, RADIUS=5.4, BRANCHES=3, SPIN=1.15, RAND=.3, POWER=2.9;
     var positions=new Float32Array(COUNT*3), colors=new Float32Array(COUNT*3);
-    var cIn=new THREE.Color(0xffa04d), cMid=new THREE.Color(0xff5f2e), cOut=new THREE.Color(0x7c5cff), tmp=new THREE.Color();
+    var cIn=new THREE.Color(0xffffff), cMid=new THREE.Color(0xbdbdbd), cOut=new THREE.Color(0x4a4a52), tmp=new THREE.Color();
     for(var i=0;i<COUNT;i++){
       var r=Math.pow(Math.random(),1.7)*RADIUS;
       var branch=((i%BRANCHES)/BRANCHES)*Math.PI*2;
@@ -209,7 +209,7 @@ bootHero();
       var tMix=r/RADIUS;
       if(tMix<.45) tmp.copy(cIn).lerp(cMid,tMix/.45); else tmp.copy(cMid).lerp(cOut,(tMix-.45)/.55);
       /* sprinkle of bright white-blue stars */
-      if(Math.random()>.93) tmp.set(0xdfe8ff);
+      if(Math.random()>.93) tmp.set(0xffffff);
       colors[i*3]=tmp.r; colors[i*3+1]=tmp.g; colors[i*3+2]=tmp.b;
     }
     var gGeo=new THREE.BufferGeometry();
@@ -223,10 +223,10 @@ bootHero();
       var c=document.createElement('canvas'); c.width=c.height=256;
       var g=c.getContext('2d');
       var grad=g.createRadialGradient(128,128,0,128,128,128);
-      grad.addColorStop(0,'rgba(255,205,140,1)');
-      grad.addColorStop(.3,'rgba(255,120,55,.55)');
-      grad.addColorStop(.65,'rgba(150,80,255,.20)');
-      grad.addColorStop(1,'rgba(124,92,255,0)');
+      grad.addColorStop(0,'rgba(255,255,255,1)');
+      grad.addColorStop(.3,'rgba(205,205,205,.55)');
+      grad.addColorStop(.65,'rgba(120,120,130,.20)');
+      grad.addColorStop(1,'rgba(90,90,100,0)');
       g.fillStyle=grad; g.fillRect(0,0,256,256);
       return new THREE.CanvasTexture(c);
     }
@@ -242,7 +242,7 @@ bootHero();
     }
     var sGeo=new THREE.BufferGeometry();
     sGeo.setAttribute('position',new THREE.BufferAttribute(sPos,3));
-    var stars=new THREE.Points(sGeo,new THREE.PointsMaterial({color:0xaFC4ff,size:.06,depthWrite:false,transparent:true,opacity:.7}));
+    var stars=new THREE.Points(sGeo,new THREE.PointsMaterial({color:0xd9d9d9,size:.06,depthWrite:false,transparent:true,opacity:.7}));
     scene.add(stars);
 
     var mx=0,my=0,tx=0,ty=0;
