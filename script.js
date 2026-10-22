@@ -305,11 +305,22 @@ function scheduleGalaxy(){
   idle(initGalaxy,{timeout:900});
 }
 
+/* Three.js (~600 KB) is fetched only now — after the intro — so it never blocks first paint. */
+function loadThree(ok,fail){
+  if(window.THREE){ ok(); return; }
+  var s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+  s.async=true; s.onload=ok; s.onerror=fail;
+  document.head.appendChild(s);
+}
 function initGalaxy(){
   var canvas=$('#webgl');
   if(!canvas) return;
   if(reduced){ canvas.style.display='none'; return; }
-  if(!window.THREE){ canvas.classList.add('webgl-fallback'); return; } /* CSS blue glow remains */
+  loadThree(function(){ buildGalaxy(canvas); },function(){ canvas.classList.add('webgl-fallback'); }); /* CSS blue glow remains */
+}
+function buildGalaxy(canvas){
+  if(!window.THREE){ canvas.classList.add('webgl-fallback'); return; }
   try{
     var isSmall=(window.innerWidth||1200)<760 || coarse;
     var renderer=new THREE.WebGLRenderer({canvas:canvas,alpha:true,antialias:false,powerPreference:isSmall?'default':'high-performance'});
