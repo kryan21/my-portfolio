@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KRYAN® — Websites for Clinics, Institutes, Creators & Local Businesses That Turn Visitors Into Customers</title>
+<meta name="description" content="Premium websites for every business: dental & skin clinics, coaching institutes, hotel management, photographers, recruitment firms and local brands. Live work: Aesthetica, Indra Biology, Shaadi Reels, Glocal & more.">
+<meta name="theme-color" content="#07070b">
+<meta property="og:title" content="KRYAN® — Websites That Sell, For Every Business">
+<meta property="og:description" content="Clinics. Institutes. Creators. Recruitment. One standard: spectacular design that converts. See the live sites.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+</head>
+<body>
+<script>history.scrollRestoration='manual'; if(location.hash) history.replaceState(null,'',location.pathname); window.scrollTo(0,0);</script>
+
+<div id="scrollProgress"></div>
+<div class="noise" aria-hidden="true"></div>
+
+<!-- ═══ NAV ═══ -->
+<header class="nav" id="topNav">
+  <a class="brand" href="#top" aria-label="KRYAN home">KRYAN<span>.</span></a>
+  <nav class="nav-links" aria-label="Main">
+    <a href="#work">Work</a>
+    <a href="#industries">Industries</a>
+    <a href="#services">Services</a>
+    <a href="#process">Process</a>
+  </nav>
+  <a class="btn btn-nav magnetic" href="#contact"><span>Start a Project</span><i>↗</i></a>
+  <button class="burger" id="burger" aria-label="Open menu"><span></span><span></span></button>
+</header>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#work">Work</a><a href="#industries">Industries</a><a href="#services">Services</a><a href="#process">Process</a><a href="#contact" class="mm-cta">Start a Project ↗</a>
+</div>
+
+<main id="top">
+
+<!-- ═══ HERO — interactive 3D ═══ -->
+<section class="hero" id="heroSection">
+  <canvas id="webgl" aria-hidden="true"></canvas>
+  <div class="hero-glow" aria-hidden="true"></div>
+
+  <div class="hero-content">
+    <p class="hero-eyebrow reveal"><span class="live-dot"></span> WEB DESIGNER FOR EVERY BUSINESS — INDIA · WORLDWIDE</p>
+    <h1 class="hero-title">
+      <span class="line"><span class="wi">I</span> <span class="wi">BUILD</span></span>
+      <span class="line"><span class="wi em-unit">Websites</span></span>
+      <span class="line"><span class="wi">THAT</span> <span class="wi">SELL.</span></span>
+    </h1>
+    <p class="hero-sub reveal">For clinics, institutes, photographers, hotels, recruitment firms &amp; local brands. Not templates — premium, cinematic, conversion-first websites, whatever your business.</p>
+    <div class="hero-ctas reveal">
+      <a class="btn btn-primary magnetic" href="#work"><span>See Live Work</span><i>↓</i></a>
+      <a class="btn btn-ghost magnetic" href="#contact"><span>Get Your Website</span><i>↗</i></a>
+    </div>
+    <div class="hero-meta reveal">
+      <div><strong class="meta-big">Demo First</strong><span>Live demo with your branding — before you pay</span></div>
+      <div><strong class="meta-big">Every Business</strong><span>Clinics · institutes · creators · hotels · brands</span></div>
+      <div><strong class="meta-big">No Templates</strong><span>Custom design, 3D &amp; motion on every site</span></div>
+    </div>
+  </div>
+  <a class="scroll-hint" href="#work" aria-label="Scroll down"><span></span>SCROLL</a>
+</section>
+
+<!-- ═══ MARQUEE ═══ -->
+<div class="marquee" aria-hidden="true"><div class="marquee-track" id="marqueeTrack">
+  <div class="marquee-set">
+    <span>DENTAL HOSPITALS ✦</span><span>SKIN CLINICS ✦</span><span>COACHING INSTITUTES ✦</span><span>HOTEL MANAGEMENT ✦</span><span>PHOTOGRAPHERS ✦</span><span>WEDDING CREATORS ✦</span><span>RECRUITMENT FIRMS ✦</span><span>LOCAL BRANDS ✦</span>
+  </div>
+</div></div>
+
+<!-- ═══ WORK — real screenshots + real snippets from the live sites ═══ -->
+<section class="section work" id="work">
+  <div class="sec-head reveal">
+    <p class="eyebrow">SELECTED WORK</p>
+    <h2 class="rise">Real sites. Real <em>businesses.</em></h2>
+    <span class="accent-line"></span>
+    <p class="sec-desc">Every screenshot and every quote below is taken from the actual live website. Tap any card to visit it.</p>
+  </div>
+
+  <div class="filters reveal" role="tablist" aria-label="Filter projects">
+    <button class="filter active" data-filter="all">All Work</button>
+    <button class="filter" data-filter="health">Clinics &amp; Health</button>
+    <button class="filter" data-filter="edu">Institutes</button>
+    <button class="filter" data-filter="creator">Portfolio &amp; Wedding</button>
+    <button class="filter" data-filter="tools">Tools &amp; Platforms</button>
+  </div>
+
+  <div class="work-grid" id="workGrid">
+
+    <a class="work-card tilt reveal" data-cat="health" data-tilt href="https://aestheticaskinhair.com" target="_blank" rel="noopener">
+      <div class="wc-visual has-shot"><img class="wc-shot" src="assets/shots/aesthetica.jpg" alt="Aesthetica Skin and Hair clinic website screenshot" loading="lazy"></div>
+      <div class="wc-body"><p class="wc-cat">Derma · Skin &amp; Hair Clinic — Patna</p><h3>Aesthetica Skin &amp; Hair</h3>
+      <blockquote class="wc-quote">“Skin science, given a human touch.”</blockquote>
+      <p>Led by Dr. Abhishek Ranjan — dermatology, hair restoration &amp; laser, presented with clinical precision and a Book a Consultation funnel.</p><span class="wc-link">Visit Live ↗</span></div>
+    </a>
+
+    <a class="work-card tilt reveal" data-cat="edu" data-tilt href="https://indrabio.com" target="_blank" rel="noopener">
+      <div class="wc-visual has-shot"><img class="wc-shot" src="assets/shots/indra.jpg" alt="Indra Biology institute website screenshot" loading="lazy"></div>
+      <div class="wc-body"><p class="wc-cat">Coaching Institute — Kankarbagh, Patna</p><h3>Indra Biology</h3>
+      <blockquote class="wc-quote">“Your dream doctor career starts here.”</blockquote>
+      <p>NEET UG + Class 11–12 foundation institute site — Enrol Now &amp; WhatsApp CTAs front and centre, built for admissions.</p><span class="wc-link">Visit Live ↗</span></div>
+    </a>
+
+    <a class="work-card tilt reveal" data-cat="creator" data-tilt href="https://kryan21.github.io/shadi-reels/" target="_blank" rel="noopener">
+      <div class="wc-visual has-shot"><img class="wc-shot" src="assets/shots/shaadi.jpg" alt="Shaadi Reels wedding content website screenshot" loading="lazy"></div>
+      <div class="wc-body"><p class="wc-cat">Wedding Content Creator — Delhi · Dubai</p><h3>Shaadi Reels</h3>
+      <blockquote class="wc-quote">“We are the custodians of your memories.”</blockquote>
+      <p>Luxury wedding reels site — reels play in-site, royal preloader, quote funnel for premium clients &amp; planners.</p><span class="wc-link">Visit Live ↗</span></div>
+    </a>
+
+    <a class="work-card tilt reveal" data-cat="tools" data-tilt href="https://kryan21.github.io/evygbuhnj/" target="_blank" rel="noopener">
+      <div class="wc-visual has-shot"><img class="wc-shot" src="assets/shots/glocal.jpg" alt="Glocal recruitment website screenshot" loading="lazy"></div>
+      <div class="wc-body"><p class="wc-cat">Recruitment Firm</p><h3>Glocal Placements</h3>
+      <blockquote class="wc-quote">“Connecting talent with opportunity.”</blockquote>
+      <p>Recruit · Train · Place — interactive job cards, employer sections and a Find a Job / Hire Talent funnel. <em class="wip-txt">Work in progress.</em></p><span class="wc-link">Visit Live ↗</span></div>
+    </a>
+
+    <a class="work-card tilt reveal" data-cat="health" data-tilt href="https://buddhadentalhospital.com" target="_blank" rel="noopener">
+      <div class="wc-visual has-shot"><img class="wc-shot" src="assets/shots/buddha.jpg" alt="Buddha Dental Hospital website screenshot" loading="lazy"></div>
+      <div class="wc-body"><p class="wc-cat">Dental Hospital — Kankarbagh, Patna</p><h3>Buddha Dental Hospital</h3>
+      <blockquote class="wc-quote">“Your smile deserves expert care — guaranteed.”</blockquote>
+      <p>Thirty years and 2.5 lakh+ smiles — a trust-first hospital site with call-first enquiry design, services and doctor profiles.</p><span class="wc-link">Visit Live ↗</span></div>
+    </a>
+
+    <a class="work-card tilt reveal" data-cat="edu" data-tilt href="https://www.globlskills.com" target="_blank" rel="noopener">
+      <div class="wc-visual v-hotel"><span class="wc-big">GS</span><span class="wc-pat"></span></div>
+      <div class="wc-body"><p class="wc-cat">Hotel Management Institute — Siliguri</p><h3>Global Skills &amp; Hospitality</h3>
+      <blockquote class="wc-quote">“Sharp skills. Sharper impressions.”</blockquote>
+      <p>Hospitality management institute site with a premium, hotel-grade feel and course-led enquiry flow.</p><span class="wc-link">Visit Live ↗</span></div>
+    </a>
+
+    <a class="work-card tilt reveal" data-cat="tools" data-tilt href="https://kryan21.github.io/trading-terminal/" target="_blank" rel="noopener">
+      <div class="wc-visual has-shot"><img class="wc-shot" src="assets/shots/trading.jpg" alt="Trading terminal web app screenshot" loading="lazy"></div>
+      <div class="wc-body"><p class="wc-cat">Web App · Tool</p><h3>Trading Terminal</h3>
+      <blockquote class="wc-quote">“NSE Trading Terminal — live charts, screeners &amp; portfolio tools.”</blockquote>
+      <p>A fast, data-dense terminal interface — proof I build tools and dashboards, not just pages.</p><span class="wc-link">Visit Live ↗</span></div>
+    </a>
+
+    <a class="work-card tilt reveal" data-cat="tools" data-tilt href="https://kryan21.github.io/turf/" target="_blank" rel="noopener">
+      <div class="wc-visual has-shot"><img class="wc-shot" src="assets/shots/turf.jpg" alt="StrikersTurf box cricket booking website screenshot" loading="lazy"><em class="wc-badge wip">WIP</em></div>
+      <div class="wc-body"><p class="wc-cat">Sports Booking — Khurram Nagar, Lucknow</p><h3>StrikersTurf</h3>
+      <blockquote class="wc-quote">“Lucknow's home ground — book your game.”</blockquote>
+      <p>Premium box-cricket grounds with floodlights &amp; instant confirmation. <em class="wip-txt">Work in progress.</em></p><span class="wc-link">Visit Live ↗</span></div>
+    </a>
+
+  </div>
+</section>
+
+<!-- ═══ INDUSTRIES — every business, equal weight ═══ -->
+<section class="section industries" id="industries">
+  <div class="sec-head reveal">
+    <p class="eyebrow">WHO I BUILD FOR</p>
+    <h2 class="rise">Whatever your business, <em>this is for you.</em></h2>
+    <span class="accent-line"></span>
+    <p class="sec-desc">Clients ask for a portfolio because every business needs proof in its own world. Here's mine — one industry at a time.</p>
+  </div>
+  <div class="ind-grid">
+    <article class="ind-card reveal"><span class="ind-ico">✚</span><h3>Clinics &amp; Hospitals</h3><p>Dental, skin, hair &amp; multi-speciality. Trust-first design that turns Google searches into appointments.</p></article>
+    <article class="ind-card reveal"><span class="ind-ico">🎓</span><h3>Institutes &amp; Coaching</h3><p>Admissions-focused sites with courses, results and Enrol/WhatsApp funnels parents &amp; students trust.</p></article>
+    <article class="ind-card reveal"><span class="ind-ico">🎬</span><h3>Photographers &amp; Creators</h3><p>Cinematic portfolios where your reels &amp; work play on-site — and premium clients enquire, not bargain.</p></article>
+    <article class="ind-card reveal"><span class="ind-ico">🏨</span><h3>Hotels &amp; Hospitality</h3><p>Hospitality-grade presentation for institutes, stays &amp; venues — sharp skills, sharper impressions.</p></article>
+    <article class="ind-card reveal"><span class="ind-ico">🧭</span><h3>Recruitment &amp; Services</h3><p>Job boards, employer funnels and service platforms with real interactive tools, not brochure pages.</p></article>
+    <article class="ind-card reveal"><span class="ind-ico">⚡</span><h3>Local Brands &amp; Tools</h3><p>Sports bookings, dashboards, trading tools, local businesses — if it runs on the web, I can build it.</p></article>
+  </div>
+</section>
+
+<!-- ═══ SERVICES ═══ -->
+<section class="section services" id="services">
+  <div class="sec-head reveal">
+    <p class="eyebrow">WHAT YOU GET</p>
+    <h2 class="rise">Everything a business needs to <em>win online.</em></h2>
+    <span class="accent-line"></span>
+  </div>
+  <div class="svc-grid">
+    <article class="svc-card reveal"><span class="svc-num">01</span><h3>Premium Website Design</h3><p>Custom, Awwwards-level design — striking typography, 3D &amp; motion, zero templates. Your site will not look like your competitor's.</p></article>
+    <article class="svc-card reveal"><span class="svc-num">02</span><h3>Built to Convert</h3><p>Strong calls-to-action, WhatsApp &amp; enquiry flows, trust sections — designed around bookings, admissions and appointments.</p></article>
+    <article class="svc-card reveal"><span class="svc-num">03</span><h3>Fast &amp; Mobile-First</h3><p>Most of your customers are on phones. Every site is fast, responsive and flawless on mobile first.</p></article>
+    <article class="svc-card reveal"><span class="svc-num">04</span><h3>Demo First, Always</h3><p>You see a live demo with YOUR branding before you commit. Like it → we launch it. Simple.</p></article>
+  </div>
+</section>
+
+<!-- ═══ PROCESS ═══ -->
+<section class="section process" id="process">
+  <div class="sec-head reveal">
+    <p class="eyebrow">HOW IT WORKS</p>
+    <h2 class="rise">From first call to <em>live site.</em></h2>
+    <span class="accent-line"></span>
+  </div>
+  <div class="steps">
+    <div class="step reveal"><span>01</span><h3>Tell me about your business</h3><p>One short conversation — what you sell, who you sell to, sites you like.</p></div>
+    <div class="step reveal"><span>02</span><h3>See your live demo</h3><p>I build a demo with your branding first. You judge the work, not a pitch.</p></div>
+    <div class="step reveal"><span>03</span><h3>Refine together</h3><p>Your feedback, my revisions — content, photos, packages, everything polished.</p></div>
+    <div class="step reveal"><span>04</span><h3>Launch &amp; get enquiries</h3><p>Site goes live on your domain, linked everywhere your customers already are.</p></div>
+  </div>
+</section>
+
+<!-- ═══ CONTACT ═══ -->
+<section class="section contact" id="contact">
+  <div class="contact-wrap reveal">
+    <p class="eyebrow">START A PROJECT</p>
+    <h2 class="contact-title rise">Let's build <em>yours.</em></h2>
+    <p class="contact-sub">Clinic, institute, studio, hotel, firm or brand — tell me what you do. I'll reply with ideas and a demo-first plan, no obligation.</p>
+    <form id="enquiryForm" novalidate>
+      <div class="f-row">
+        <label>Your name<input type="text" id="fName" placeholder="e.g. Rohan Sharma" autocomplete="name"></label>
+        <label>Business type
+          <select id="fType">
+            <option value="">Select…</option>
+            <option>Clinic / Hospital</option>
+            <option>Institute / Coaching</option>
+            <option>Photographer / Creator</option>
+            <option>Hotel / Hospitality</option>
+            <option>Recruitment / Services</option>
+            <option>Local Business / Brand</option>
+            <option>Other</option>
+          </select>
+        </label>
+      </div>
+      <label>What do you need?<textarea id="fMsg" rows="4" placeholder="I need a website for my clinic that shows our treatments and gets appointment enquiries…"></textarea></label>
+      <p class="f-error" id="fError" aria-live="polite"></p>
+      <button class="btn btn-primary btn-big magnetic" type="submit"><span>Send Enquiry</span><i>↗</i></button>
+      <p class="f-ok" id="fOk" aria-live="polite"></p>
+    </form>
+    <div class="contact-alt">
+      <a href="https://github.com/kryan21" target="_blank" rel="noopener">GitHub — @kryan21 ↗</a>
+      <span>·</span><span>Based in India · Working worldwide</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <a class="brand big" href="#top">KRYAN<span>.</span></a>
+  <p>Websites that turn visitors into customers — for every business.</p>
+  <nav><a href="#work">Work</a><a href="#industries">Industries</a><a href="#services">Services</a><a href="#contact">Start a Project</a></nav>
+  <p class="copy">© 2026 KRYAN. All rights reserved.</p>
+</footer>
+
+<a class="float-cta" href="#contact" aria-label="Start a project">✦</a>
+
+<script src="script.js"></script>
+</body>
+</html>
