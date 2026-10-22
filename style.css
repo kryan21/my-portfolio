@@ -238,3 +238,24 @@ body.hero-ready .hero .reveal{opacity:1;transform:none}
   .hero-eyebrow{font-size:.58rem;letter-spacing:.18em}
   .hero-ctas .btn{width:100%;justify-content:center}
 }
+
+
+/* ═══ V11 — filter chips: higher contrast + a slow travelling light on the border ═══ */
+@property --a{syntax:'<angle>';inherits:false;initial-value:0deg}
+@keyframes chipSpin{to{--a:360deg}}
+@keyframes chipGlow{50%{box-shadow:0 10px 30px -8px rgba(116,183,255,.75),0 0 0 1px rgba(255,255,255,.55)}}
+.filters{padding:14px;margin-left:-14px;margin-right:-14px;border-radius:26px;background:linear-gradient(180deg,rgba(116,183,255,.07),rgba(116,183,255,.02));border:1px solid rgba(116,183,255,.16)}
+.filter{position:relative;isolation:isolate;color:#e4ecf8;background:rgba(116,183,255,.08);border:1px solid rgba(207,228,255,.3);padding:11px 20px;transition:transform .2s ease-out,background .25s,color .25s,border-color .25s,box-shadow .25s}
+.filter::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:2px;pointer-events:none;
+  background:conic-gradient(from var(--a),transparent 0 62%,rgba(116,183,255,.15) 70%,#74b7ff 86%,#ffffff 94%,transparent 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+  animation:chipSpin 4.5s linear infinite}
+.filter:nth-child(2)::before{animation-delay:-.9s}
+.filter:nth-child(3)::before{animation-delay:-1.8s}
+.filter:nth-child(4)::before{animation-delay:-2.7s}
+.filter:nth-child(5)::before{animation-delay:-3.6s}
+.filter:hover{color:#fff;background:rgba(116,183,255,.18);border-color:rgba(207,228,255,.6);transform:translateY(-2px)}
+.filter.active{background:#fff;color:#07111f;border-color:#fff;animation:chipGlow 2.6s ease-in-out infinite}
+.filter.active::before{background:conic-gradient(from var(--a),transparent 0 62%,rgba(255,38,56,.2) 72%,#ff2638 88%,#74b7ff 96%,transparent 100%)}
+@media(max-width:640px){.filters{margin-left:0;margin-right:0;padding:12px;gap:8px}.filter{padding:10px 16px;font-size:.84rem}}
+@media(prefers-reduced-motion:reduce){.filter::before,.filter.active{animation:none}}
