@@ -5,6 +5,8 @@ var $=function(s,c){return (c||document).querySelector(s)};
 var $$=function(s,c){return Array.prototype.slice.call((c||document).querySelectorAll(s))};
 function mq(q){try{return (typeof window.matchMedia==='function')?window.matchMedia(q).matches:false}catch(e){return false}}
 var reduced=mq('(prefers-reduced-motion: reduce)');
+var coarse=mq('(pointer:coarse)');
+var WA_NUMBER='917321929869';
 
 /* ── Hero starts immediately (no welcome screen) ── */
 var heroBooted=false;
@@ -14,7 +16,7 @@ function bootHero(){
     var started=false;
     var go=function(){ if(!started){ started=true; startHero(); } };
     document.fonts.ready.then(go);
-    setTimeout(go,700);
+    setTimeout(go,500);
   }else{
     startHero();
   }
@@ -26,8 +28,8 @@ function markHeroReady(){ document.body.classList.add('hero-ready'); }
 function startHero(){
   if(heroStarted) return; heroStarted=true;
   if(window.gsap && !reduced){
-    gsap.to('.hero-title .wi',{y:0,duration:1.05,stagger:.09,ease:'power4.out',clearProps:'transform,opacity,visibility',onComplete:markHeroReady});
-    gsap.fromTo('.hero .reveal',{opacity:0,y:26},{opacity:1,y:0,duration:.9,stagger:.1,delay:.25,ease:'power3.out',clearProps:'all'});
+    gsap.to('.hero-title .wi',{y:0,duration:.85,stagger:.07,ease:'power4.out',clearProps:'transform,opacity,visibility',onComplete:markHeroReady});
+    gsap.fromTo('.hero .reveal',{opacity:0,y:22},{opacity:1,y:0,duration:.7,stagger:.08,delay:.2,ease:'power3.out',clearProps:'all'});
   }else{
     $$('.hero-title .wi').forEach(function(el){el.style.transform='none'});
     $$('.hero .reveal').forEach(function(el){el.style.opacity='1';el.style.transform='none'});
@@ -44,111 +46,162 @@ function startCounters(){
     var target=parseInt(el.getAttribute('data-count'),10)||0;
     if(reduced){el.textContent=target+'+';return}
     var obj={v:0};
-    if(window.gsap){ gsap.to(obj,{v:target,duration:1.6,ease:'power2.out',onUpdate:function(){el.textContent=Math.round(obj.v)+'+'}}); }
+    if(window.gsap){ gsap.to(obj,{v:target,duration:1.4,ease:'power2.out',onUpdate:function(){el.textContent=Math.round(obj.v)+'+'}}); }
     else{ el.textContent=target+'+'; }
   });
 }
 
-/* ── Scroll progress + nav state ── */
+/* ── Smooth scrolling (Lenis, desktop wheel only — touch stays native) ── */
+var lenis=null;
+if(window.Lenis && !reduced){
+  try{
+    lenis=new Lenis({duration:1.05,easing:function(t){return Math.min(1,1.001-Math.pow(2,-10*t))},smoothWheel:true});
+    if(window.gsap && window.ScrollTrigger){
+      lenis.on('scroll',ScrollTrigger.update);
+      gsap.ticker.add(function(time){ lenis.raf(time*1000); });
+      gsap.ticker.lagSmoothing(0);
+    }else{
+      (function loop(t){ lenis.raf(t); requestAnimationFrame(loop); })(0);
+    }
+  }catch(e){ lenis=null; }
+}
+function scrollToTarget(href){
+  var el=href==='#top'?null:$(href);
+  if(href!=='#top'&&!el) return false;
+  if(lenis){ lenis.scrollTo(el||0,{offset:el?-16:0,duration:1.1}); return true; }
+  return false;
+}
+document.addEventListener('click',function(e){
+  var a=e.target.closest&&e.target.closest('a[href^="#"]');
+  if(!a) return;
+  var href=a.getAttribute('href');
+  if(!href||href==='#') return;
+  if(scrollToTarget(href)) e.preventDefault();
+});
+
+/* ── Scroll progress + nav state (rAF-throttled) ── */
 var prog=$('#scrollProgress'), nav=$('#topNav');
-window.__scrollP=0;
-window.addEventListener('scroll',function(){
-  var h=document.documentElement;
-  var heroH=window.innerHeight||800;
-  window.__scrollP=Math.max(0,Math.min(1,(h.scrollTop||window.scrollY||0)/heroH));
-  var max=h.scrollHeight-h.clientHeight;
-  if(prog) prog.style.width=(max>0?(h.scrollTop/max)*100:0)+'%';
-  if(nav) nav.classList.toggle('scrolled',h.scrollTop>30);
-},{passive:true});
+var scrollTarget=0, ticking=false;
+function onScroll(){
+  if(ticking) return; ticking=true;
+  requestAnimationFrame(function(){
+    ticking=false;
+    var h=document.documentElement;
+    var y=h.scrollTop||window.scrollY||0;
+    var heroH=window.innerHeight||800;
+    scrollTarget=Math.max(0,Math.min(1,y/heroH));
+    var max=h.scrollHeight-h.clientHeight;
+    if(prog) prog.style.transform='scaleX('+(max>0?y/max:0)+')';
+    if(nav) nav.classList.toggle('scrolled',y>30);
+  });
+}
+window.addEventListener('scroll',onScroll,{passive:true});
+onScroll();
 
 /* ── Mobile menu ── */
 var burger=$('#burger'), mm=$('#mobileMenu');
+function setMenu(open){
+  mm.classList.toggle('open',open);
+  burger.classList.toggle('open',open);
+  burger.setAttribute('aria-expanded',open?'true':'false');
+  document.body.classList.toggle('menu-open',open);
+  if(lenis){ open?lenis.stop():lenis.start(); }
+}
 if(burger&&mm){
-  burger.addEventListener('click',function(){mm.classList.toggle('open')});
-  $$('a',mm).forEach(function(a){a.addEventListener('click',function(){mm.classList.remove('open')})});
+  burger.addEventListener('click',function(){ setMenu(!mm.classList.contains('open')); });
+  $$('a',mm).forEach(function(a){a.addEventListener('click',function(){ setMenu(false); })});
 }
 
 /* ── Scroll reveals ── */
 if(window.gsap && window.ScrollTrigger && !reduced){
   gsap.registerPlugin(ScrollTrigger);
+  ScrollTrigger.config({ignoreMobileResize:true});
+
   $$('.reveal').forEach(function(el){
     if(el.closest('.hero')) return;
     if(el.classList.contains('work-card')||el.classList.contains('ind-card')||el.classList.contains('svc-card')) return;
-    gsap.fromTo(el,{opacity:0,y:36},{opacity:1,y:0,duration:.95,ease:'power3.out',clearProps:'transform',
-      scrollTrigger:{trigger:el,start:'top 88%',once:true}});
+    gsap.fromTo(el,{opacity:0,y:26},{opacity:1,y:0,duration:.6,ease:'power2.out',clearProps:'transform',
+      scrollTrigger:{trigger:el,start:'top 92%',once:true}});
   });
 
-  /* ═══ PREMIUM SCROLL 3D ═══ */
-  /* (a) Pinned hero: as you scroll, content lifts away and the galaxy zooms in. */
+  /* Hero: content simply lifts and fades as you leave the galaxy (no pin, so no scroll jump).
+     The galaxy zoom is handled by the WebGL camera, never by scaling text or the canvas. */
   var heroSec=$('#heroSection');
-  var canPinHero=(window.innerWidth||0)>=760 && !mq('(pointer:coarse)');
-  if(heroSec && canPinHero){
-    /* Keep the words on their natural grid: fade/lift only. The galaxy zoom is
-       handled by the WebGL camera, never by scaling text or the canvas. */
-    var pinTl=gsap.timeline({scrollTrigger:{trigger:heroSec,start:'top top',end:'+=72%',scrub:1,pin:true,anticipatePin:1}});
-    pinTl.to('.hero-content',{y:-30,opacity:.22,ease:'none'},0)
-         .to('.hero-glow',{opacity:.3,ease:'none'},0)
-         .to('.scroll-hint',{opacity:0,ease:'none'},0);
-  }else if(heroSec){
-    gsap.to('.hero-content',{opacity:.3,ease:'none',scrollTrigger:{trigger:heroSec,start:'top top',end:'bottom top',scrub:1}});
+  if(heroSec){
+    gsap.to('.hero-content',{y:-40,opacity:.15,ease:'none',force3D:true,
+      scrollTrigger:{trigger:heroSec,start:'top top',end:'bottom 25%',scrub:true}});
+    gsap.to('.hero-glow',{opacity:.25,ease:'none',
+      scrollTrigger:{trigger:heroSec,start:'top top',end:'bottom top',scrub:true}});
+    gsap.to('.scroll-hint',{opacity:0,ease:'none',
+      scrollTrigger:{trigger:heroSec,start:'top top',end:'20% top',scrub:true}});
   }
-  /* (b) 3D entrances: cards unfold out of the screen in perspective as they arrive. */
-  $$('.work-card,.ind-card,.svc-card').forEach(function(card,i){
-    gsap.fromTo(card,{opacity:0,y:90,rotateX:26,transformPerspective:1100,transformOrigin:'50% 100%'},
-      {opacity:1,y:0,rotateX:0,duration:1.05,ease:'power3.out',delay:(i%3)*.09,clearProps:'transform',
-       scrollTrigger:{trigger:card,start:'top 92%',once:true}});
+
+  /* Cards: quick, light entrance. CSS transitions are disabled while GSAP runs so the two never fight. */
+  var from=coarse?{opacity:0,y:28}:{opacity:0,y:44,rotateX:12,transformPerspective:1000,transformOrigin:'50% 100%'};
+  var to=coarse?{opacity:1,y:0}:{opacity:1,y:0,rotateX:0};
+  $$('.work-card,.ind-card,.svc-card').forEach(function(card){
+    var f=Object.assign({},from), t=Object.assign({duration:.5,ease:'power2.out',clearProps:'transform',
+      onStart:function(){card.classList.add('gs-anim')},
+      onComplete:function(){card.classList.remove('gs-anim')},
+      scrollTrigger:{trigger:card,start:'top 96%',once:true}},to);
+    gsap.fromTo(card,f,t);
   });
-  /* (c) Marquee leans with scroll velocity — small, expensive-feeling detail. */
-  var mTrack=$('#marqueeTrack');
-  if(mTrack){
-    ScrollTrigger.create({onUpdate:function(self){
-      var v=gsap.utils.clamp(-14,14,self.getVelocity()/-260);
-      gsap.to(mTrack,{skewX:v,duration:.35,ease:'power2.out',overwrite:'auto'});
-      gsap.to(mTrack,{skewX:0,duration:.7,delay:.35,ease:'power2.out',overwrite:false});
-    }});
-  }
 }else{
   var io=('IntersectionObserver' in window)?new IntersectionObserver(function(es){
     es.forEach(function(e){ if(e.isIntersecting){ e.target.style.opacity='1'; e.target.style.transform='none'; io.unobserve(e.target);} });
-  },{threshold:.12}):null;
+  },{threshold:.1}):null;
   $$('.reveal').forEach(function(el){
     if(el.closest('.hero')) return;
     if(io) io.observe(el); else {el.style.opacity='1';el.style.transform='none'}
   });
 }
 
-/* ── Marquee (guarded clone — max 3 sets, never loops on 0 width) ── */
+/* ── Marquee (time-based, pauses off-screen, leans with scroll speed) ── */
 (function marquee(){
-  var track=$('#marqueeTrack'); if(!track) return;
+  var track=$('#marqueeTrack'), skewEl=$('#marqueeSkew'), wrap=$('.marquee'); if(!track) return;
   var set=track.querySelector('.marquee-set'); if(!set) return;
+  var visible=true, x=0, w=0, last=0, lastY=window.scrollY||0, vel=0;
   function build(){
-    var w=set.getBoundingClientRect().width;
+    w=set.getBoundingClientRect().width;
     if(!w||w<10){ setTimeout(build,300); return; }
     var need=Math.min(3,Math.max(1,Math.ceil((window.innerWidth*2)/w)));
     for(var i=1;i<need;i++){ track.appendChild(set.cloneNode(true)); }
-    animate(w);
-  }
-  var x=0;
-  function animate(w){
     if(reduced) return;
-    (function step(){
-      x-=1.1; if(-x>=w) x+=w;
-      track.style.transform='translateX('+x+'px)';
-      requestAnimationFrame(step);
-    })();
+    if(wrap&&'IntersectionObserver' in window){
+      new IntersectionObserver(function(en){ visible=en[0].isIntersecting; },{threshold:0}).observe(wrap);
+    }
+    requestAnimationFrame(step);
+  }
+  function step(now){
+    requestAnimationFrame(step);
+    if(!last) last=now;
+    var dt=Math.min(50,now-last); last=now;
+    if(!visible||document.hidden) return;
+    x-=dt*.066; if(-x>=w) x+=w;
+    track.style.transform='translate3d('+x+'px,0,0)';
+    if(skewEl&&!coarse){
+      var y=window.scrollY||0, dy=y-lastY; lastY=y;
+      vel+=(dy-vel)*.12;
+      var s=Math.max(-8,Math.min(8,-vel*.22));
+      skewEl.style.transform='skewX('+s.toFixed(2)+'deg)';
+    }
   }
   if(document.readyState==='complete') build(); else window.addEventListener('load',build);
 })();
 
-/* ── 3D tilt cards ── */
+/* ── 3D tilt cards (rAF, no CSS lag) ── */
 if(mq('(hover:hover) and (pointer:fine)') && !reduced){
   $$('[data-tilt]').forEach(function(card){
-    card.addEventListener('mousemove',function(e){
+    var raf=0, ex=0, ey=0;
+    function apply(){
+      raf=0;
       var r=card.getBoundingClientRect();
-      var px=(e.clientX-r.left)/r.width-.5, py=(e.clientY-r.top)/r.height-.5;
-      card.style.transform='perspective(1000px) rotateY('+(px*7)+'deg) rotateX('+(-py*7)+'deg) translateY(-3px)';
-    });
-    card.addEventListener('mouseleave',function(){ card.style.transform=''; });
+      var px=(ex-r.left)/r.width-.5, py=(ey-r.top)/r.height-.5;
+      card.style.transform='perspective(1000px) rotateY('+(px*6)+'deg) rotateX('+(-py*6)+'deg) translateY(-3px)';
+    }
+    card.addEventListener('mouseenter',function(){ card.classList.add('tilting'); });
+    card.addEventListener('mousemove',function(e){ ex=e.clientX; ey=e.clientY; if(!raf) raf=requestAnimationFrame(apply); });
+    card.addEventListener('mouseleave',function(){ card.classList.remove('tilting'); card.style.transform=''; });
   });
 }
 
@@ -163,7 +216,7 @@ if(mq('(hover:hover)') && !reduced){
   });
 }
 
-/* ── Work filters ── */
+/* ── Work filters (instant swap + quick pop-in) ── */
 $$('.filter').forEach(function(btn){
   btn.addEventListener('click',function(){
     $$('.filter').forEach(function(b){b.classList.remove('active')});
@@ -171,12 +224,23 @@ $$('.filter').forEach(function(btn){
     var f=btn.getAttribute('data-filter');
     $$('.work-card').forEach(function(card){
       var show=(f==='all'||card.getAttribute('data-cat')===f);
-      card.classList.toggle('hide',!show);
+      if(show){
+        card.classList.remove('hide');
+        card.style.opacity='1';
+        card.classList.remove('pop'); void card.offsetWidth; card.classList.add('pop');
+      }else{
+        card.classList.add('hide');
+        card.classList.remove('pop');
+      }
     });
+    if(window.ScrollTrigger) ScrollTrigger.refresh();
   });
 });
+$$('.work-card').forEach(function(card){
+  card.addEventListener('animationend',function(){ card.classList.remove('pop'); });
+});
 
-/* ── Enquiry form ── */
+/* ── Enquiry form → opens WhatsApp directly ── */
 var form=$('#enquiryForm');
 if(form){
   form.addEventListener('submit',function(e){
@@ -187,7 +251,12 @@ if(form){
     if(name.length<2){ err.textContent='Please add your name.'; return; }
     if(!type){ err.textContent='Please select your business type.'; return; }
     if(msg.length<10){ err.textContent='Tell me a little more about what you need (10+ characters).'; return; }
-    ok.textContent='Thanks, '+name.split(' ')[0]+' ✓ Your enquiry is noted. For the fastest reply, message me on WhatsApp — 73219 29869 — I usually respond with demo ideas first.';
+    var text='Hi KRYAN, I\'m '+name+'.\nBusiness type: '+type+'\nWhat I need: '+msg;
+    var url='https://wa.me/'+WA_NUMBER+'?text='+encodeURIComponent(text);
+    var win=null;
+    try{ win=window.open(url,'_blank','noopener'); }catch(x){}
+    if(!win){ window.location.href=url; }
+    ok.textContent='Thanks, '+name.split(' ')[0]+' ✓ Opening WhatsApp with your message…';
     form.reset();
   });
 }
@@ -200,9 +269,8 @@ bootHero();
   if(!canvas||reduced){ if(canvas) canvas.style.display='none'; return; }
   if(!window.THREE) return; /* the CSS blue glow remains as a no-WebGL fallback */
   try{
-    var coarsePointer=mq('(pointer:coarse)');
-    var isSmall=(window.innerWidth||1200)<760 || coarsePointer;
-    var renderer=new THREE.WebGLRenderer({canvas:canvas,alpha:true,antialias:true,powerPreference:isSmall?'default':'high-performance'});
+    var isSmall=(window.innerWidth||1200)<760 || coarse;
+    var renderer=new THREE.WebGLRenderer({canvas:canvas,alpha:true,antialias:!isSmall,powerPreference:isSmall?'default':'high-performance'});
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,isSmall?1.5:1.8));
     renderer.setClearColor(0x000000,0);
     var scene=new THREE.Scene();
@@ -213,8 +281,7 @@ bootHero();
     group.rotation.set(.62,0,.14); /* angled disc — the premium view */
     scene.add(group);
 
-    /* A radial sprite turns every point into a soft circular particle. Linear
-       filtering (and no mipmaps) prevents the blocky squares seen on mobile. */
+    /* A radial sprite turns every point into a soft circular particle. */
     function discTexture(size,stops){
       var c=document.createElement('canvas'); c.width=c.height=size;
       var g=c.getContext('2d');
@@ -235,25 +302,25 @@ bootHero();
     ]);
 
     /* ── Spiral galaxy: white core, icy inner arms, blue outer arms ── */
-    var COUNT=isSmall?16000:56000, RADIUS=5.4, BRANCHES=3, SPIN=1.15, RAND=.3, POWER=2.9;
+    var COUNT=isSmall?12000:50000, RADIUS=5.4, BRANCHES=3, SPIN=1.15, RAND=.3, POWER=2.9;
     var positions=new Float32Array(COUNT*3), colors=new Float32Array(COUNT*3);
     var cCore=new THREE.Color(0xffffff), cIn=new THREE.Color(0xd8efff),
         cMid=new THREE.Color(0x74b7ff), cOut=new THREE.Color(0x2b4c9b), tmp=new THREE.Color();
+    function jitter(pw,amp,r){ return Math.pow(Math.random(),pw)*(Math.random()<.5?1:-1)*amp*r; }
     for(var i=0;i<COUNT;i++){
       var r=Math.pow(Math.random(),1.7)*RADIUS;
       var branch=((i%BRANCHES)/BRANCHES)*Math.PI*2;
       var spinA=r*SPIN;
-      function jitter(pw,amp){ return Math.pow(Math.random(),pw)*(Math.random()<.5?1:-1)*amp*r; }
-      var x=Math.cos(branch+spinA)*r + jitter(POWER,RAND);
-      var z=Math.sin(branch+spinA)*r + jitter(POWER,RAND);
-      var y=jitter(POWER,RAND*.55);
+      var x=Math.cos(branch+spinA)*r + jitter(POWER,RAND,r);
+      var z=Math.sin(branch+spinA)*r + jitter(POWER,RAND,r);
+      var y=jitter(POWER,RAND*.55,r);
       positions[i*3]=x; positions[i*3+1]=y; positions[i*3+2]=z;
       var tMix=r/RADIUS;
       if(tMix<.28) tmp.copy(cCore).lerp(cIn,tMix/.28);
       else if(tMix<.68) tmp.copy(cIn).lerp(cMid,(tMix-.28)/.4);
       else tmp.copy(cMid).lerp(cOut,(tMix-.68)/.32);
       var roll=Math.random();
-      if(roll>.993) tmp.set(0xff6b7a);       /* rare rose nebula, as in real galaxies */
+      if(roll>.993) tmp.set(0xff6b7a);       /* rare rose nebula */
       else if(roll>.968) tmp.set(0xffffff);  /* sparse brilliant stars */
       colors[i*3]=tmp.r; colors[i*3+1]=tmp.g; colors[i*3+2]=tmp.b;
     }
@@ -261,7 +328,7 @@ bootHero();
     gGeo.setAttribute('position',new THREE.BufferAttribute(positions,3));
     gGeo.setAttribute('color',new THREE.BufferAttribute(colors,3));
     var galaxyMaterial=new THREE.PointsMaterial({
-      size:isSmall?.052:.038,
+      size:isSmall?.056:.038,
       map:particleTexture,
       sizeAttenuation:true,
       depthWrite:false,
@@ -286,7 +353,7 @@ bootHero();
     group.add(core);
 
     /* ── Distant circular stars for depth ── */
-    var sCount=isSmall?420:850, sPos=new Float32Array(sCount*3);
+    var sCount=isSmall?300:800, sPos=new Float32Array(sCount*3);
     for(var j=0;j<sCount;j++){
       var th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1), rr=13+Math.random()*22;
       sPos[j*3]=rr*Math.sin(ph)*Math.cos(th); sPos[j*3+1]=rr*Math.cos(ph)*.6; sPos[j*3+2]=rr*Math.sin(ph)*Math.sin(th);
@@ -305,31 +372,35 @@ bootHero();
     scene.add(stars);
 
     var mx=0,my=0,tx=0,ty=0;
-    if(!coarsePointer){
+    if(!coarse){
       document.addEventListener('mousemove',function(e){ tx=(e.clientX/window.innerWidth-.5); ty=(e.clientY/window.innerHeight-.5); },{passive:true});
     }
 
-    function resize(){
+    /* Only react to real width changes — mobile URL-bar show/hide must not resize the canvas mid-scroll. */
+    var lastW=0, lastH=0, rzTimer=0;
+    function resize(force){
       var w=canvas.clientWidth||window.innerWidth, h=canvas.clientHeight||window.innerHeight;
+      if(!force && w===lastW && Math.abs(h-lastH)<120) return;
+      lastW=w; lastH=h;
       renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix();
       group.position.x = w>1100 ? 1.15 : 0;
       group.position.y = w>1100 ? .1 : (isSmall?.55:.9);
     }
-    window.addEventListener('resize',resize); resize();
+    window.addEventListener('resize',function(){ clearTimeout(rzTimer); rzTimer=setTimeout(function(){ resize(false); },120); });
+    resize(true);
 
     var heroVisible=true;
     if('IntersectionObserver' in window){
       new IntersectionObserver(function(entries){ heroVisible=entries[0].isIntersecting; },{threshold:0}).observe(canvas);
     }
 
-    var clock=new THREE.Clock();
+    var clock=new THREE.Clock(), sp=0;
     (function animate(){
       requestAnimationFrame(animate);
       if(document.hidden||!heroVisible) return;
       var t=clock.getElapsedTime();
-      var sp=window.__scrollP||0;
+      sp+=(scrollTarget-sp)*.09; /* eased scroll value → silky zoom, no stepping */
       mx+=(tx-mx)*.04; my+=(ty-my)*.04;
-      /* The revolution: slow majestic spin, faster + tighter as you scroll away. */
       group.rotation.y=t*.055 + sp*2.1;
       galaxy.rotation.y=-t*.018;
       stars.rotation.y=t*.006;
